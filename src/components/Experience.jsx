@@ -2,6 +2,7 @@ import { OrbitControls, useScroll } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import gsap from 'gsap';
 import { useEffect, useRef } from 'react';
+import * as THREE from 'three';
 
 const Experience = () => {
   const boxModel = useRef();
@@ -9,7 +10,31 @@ const Experience = () => {
   const scroll = useScroll();
   const { camera } = useThree();
 
+  const fitObjectInView = () => {
+    if (!boxModel.current) return;
+    const box = new THREE.Box3().setFromObject(boxModel.current);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z);
+
+    // Radio aproximado
+    const radius = maxDim * 0.5;
+    const fov = THREE.MathUtils.degToRad(camera.fov);
+    // distancia mínima para que quepa verticalmente
+    const dist = radius / Math.sin(fov / 2);
+
+    // Un margen para que no “toque” bordes
+    const safeDist = dist * 1.2;
+
+    // Coloca la cámara en Z positivo mirando al origen (ajústalo a tu escena)
+    camera.position.set(0, 0, safeDist);
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+  };
+
   useEffect(() => {
+    fitObjectInView();
+
     tl.current = gsap.timeline({ paused: true });
 
     // Etiquetas para leer mejor
